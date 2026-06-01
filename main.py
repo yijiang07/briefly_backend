@@ -191,17 +191,17 @@ def entry_to_article(entry, source_name: str) -> dict:
     }
 
 
-# ── STEP 1: GET ACTIVE USERS ──
-#def get_users():
- #   result = (
-  #      supabase.table("signups")
-   #     .select("*")
-    #    .neq("unsubscribed", True)
-     #   .execute()
-   # )
-   # return result.data
-
+ ── STEP 1: GET ACTIVE USERS ──
 def get_users():
+    result = (
+        supabase.table("signups")
+        .select("*")
+        .neq("unsubscribed", True)
+        .execute()
+    )
+    return result.data
+
+#def get_users():
     return [{"email": "ruzebranding@gmail.com", "topics": "AI & ML, Startups, Venture capital, Finance & macro, Tech industry", "custom_tracking": ""}]
 
 
