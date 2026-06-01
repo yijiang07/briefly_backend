@@ -191,7 +191,7 @@ def entry_to_article(entry, source_name: str) -> dict:
     }
 
 
- ── STEP 1: GET ACTIVE USERS ──
+# ── STEP 1: GET ACTIVE USERS ──
 def get_users():
     result = (
         supabase.table("signups")
