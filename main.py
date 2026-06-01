@@ -202,7 +202,7 @@ def get_users():
     return result.data
 
 #def get_users():
-    return [{"email": "ruzebranding@gmail.com", "topics": "AI & ML, Startups, Venture capital, Finance & macro, Tech industry", "custom_tracking": ""}]
+  #  return [{"email": "ruzebranding@gmail.com", "topics": "AI & ML, Startups, Venture capital, Finance & macro, Tech industry", "custom_tracking": ""}]
 
 
 # ── STEP 2: FETCH NEWS FROM RSS ──
