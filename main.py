@@ -64,7 +64,7 @@ def make_unsub_link(email: str) -> str:
     #return result.data
 
 def get_users():
-    return [{"email": "youremail@gmail.com", "topics": "AI & ML, Startups, Venture capital, Finance & macro, Tech industry", "custom_tracking": ""}]
+    return [{"email": "ruzebranding@gmail.com", "topics": "AI & ML, Startups, Venture capital, Finance & macro, Tech industry", "custom_tracking": ""}]
 
 
 # ── STEP 2: FETCH NEWS ──
