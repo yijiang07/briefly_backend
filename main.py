@@ -291,9 +291,13 @@ Be specific and direct. Max 30 words."""
                   "messages": [{"role": "user", "content": prompt}]},
             timeout=15,
         )
-        return res.json()["content"][0]["text"].strip()
+        data = res.json()
+        if "content" not in data:
+            print(f"  Claude API error: {data}")
+            return "Why it matters: This story is relevant to your tracked topics."
+        return data["content"][0]["text"].strip()
     except Exception as e:
-        print(f"  Claude error: {e}")
+        print(f"  Claude error (why): {str(e)}")
         return "Why it matters: This story is relevant to your tracked topics."
 
 
