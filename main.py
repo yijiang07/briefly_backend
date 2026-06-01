@@ -297,7 +297,40 @@ Be specific and direct. Max 30 words."""
         return "Why it matters: This story is relevant to your tracked topics."
 
 
-# ── STEP 4: WELCOME EMAIL ──
+# ── STEP 4: DAY SUMMARY ──
+def get_day_summary(articles: list, user_topics: str) -> str:
+    headlines = "\n".join(
+        f"- {a.get('title','')} ({a.get('source',{}).get('name','')})"
+        for a in articles
+    )
+    prompt = f"""You are writing a 2-3 sentence intro paragraph for a personalized news briefing email.
+
+The reader follows: {user_topics}
+
+Today's top stories:
+{headlines}
+
+Write a punchy, intelligent 2-3 sentence paragraph summarizing the overall news theme for today as it relates to the reader's interests.
+- Be specific, not generic
+- Mention 1-2 concrete story details
+- Sound like a smart analyst, not a robot
+- Do NOT start with "Today" or "Here are"
+- Max 60 words"""
+    try:
+        res = requests.post(
+            "https://api.anthropic.com/v1/messages",
+            headers={{"x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json"}},
+            json={{"model": "claude-haiku-4-5-20251001", "max_tokens": 150,
+                  "messages": [{{"role": "user", "content": prompt}}]}},
+            timeout=15,
+        )
+        return res.json()["content"][0]["text"].strip()
+    except Exception as e:
+        print(f"  Day summary error: {{e}}")
+        return ""
+
+
+# ── STEP 5: WELCOME EMAIL ──
 def send_welcome_email(email: str, topics: str):
     topics_display = topics or "your selected topics"
     unsub_link     = make_unsub_link(email)
@@ -356,7 +389,7 @@ def send_welcome_email(email: str, topics: str):
 
 
 # ── STEP 5: BUILD DAILY EMAIL ──
-def build_email(user: dict, articles: list, today: str = ""):
+def build_email(user: dict, articles: list, today: str = "", day_summary: str = ""):
     if not today:
         tz_name = user.get("timezone") or "America/New_York"
         try:
@@ -383,6 +416,13 @@ def build_email(user: dict, articles: list, today: str = ""):
           <div style="font-size:13px;color:#7a7670;line-height:1.6;">{why}</div>
         </div>"""
 
+    summary_block = ""
+    if day_summary:
+        summary_block = f'''<div style="background:#eef1ff;border-left:3px solid #2b4fff;border-radius:0 10px 10px 0;padding:14px 18px;margin-bottom:20px;">
+      <div style="font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:#2b4fff;margin-bottom:6px;">Today's overview</div>
+      <div style="font-size:14px;color:#0f0e0c;line-height:1.7;">{day_summary}</div>
+    </div>'''
+
     return f"""<!DOCTYPE html>
 <html>
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
@@ -392,9 +432,10 @@ def build_email(user: dict, articles: list, today: str = ""):
       <div style="font-family:Georgia,serif;font-size:22px;font-weight:400;margin-bottom:4px;">● Briefly</div>
       <div style="font-size:12px;color:#7a7670;">{today} · personalized to your interests</div>
     </div>
-    <div style="font-size:14px;color:#7a7670;margin-bottom:24px;line-height:1.6;">
+    <div style="font-size:14px;color:#7a7670;margin-bottom:16px;line-height:1.6;">
       Here's what matters today across <strong style="color:#0f0e0c;">{topics_display}</strong>.
     </div>
+    {{summary_block}}
     <div style="background:#fff;border-radius:16px;padding:8px 24px;border:1px solid #e8e4dc;">
       {stories_html}
     </div>
@@ -482,7 +523,10 @@ def run():
         for article in articles:
             article["why_it_matters"] = get_why_it_matters(article, user_topics)
 
-        html = build_email(user, articles, today)
+        print(f"  Generating day summary...")
+        day_summary = get_day_summary(articles, user_topics)
+
+        html = build_email(user, articles, today, day_summary)
         send_email(email, f"Your Briefly for {today}", html)
 
     print("\n✓ Pipeline complete.")
