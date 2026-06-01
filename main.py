@@ -201,9 +201,6 @@ def get_users():
     )
     return result.data
 
-#def get_users():
-  #  return [{"email": "ruzebranding@gmail.com", "topics": "AI & ML, Startups, Venture capital, Finance & macro, Tech industry", "custom_tracking": ""}]
-
 
 # ── STEP 2: FETCH NEWS FROM RSS ──
 def fetch_articles(topics: str, custom_tracking: str):
@@ -337,65 +334,8 @@ Write a punchy, intelligent 2-3 sentence paragraph summarizing the overall news 
         return ""
 
 
-# ── STEP 5: WELCOME EMAIL ──
-def send_welcome_email(email: str, topics: str):
-    topics_display = topics or "your selected topics"
-    unsub_link     = make_unsub_link(email)
 
-    html = f"""<!DOCTYPE html>
-<html>
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background:#f5f2eb;font-family:Arial,sans-serif;">
-  <div style="max-width:600px;margin:0 auto;padding:32px 16px;">
-    <div style="border-bottom:1px solid #e8e4dc;padding-bottom:20px;margin-bottom:28px;">
-      <div style="font-family:Georgia,serif;font-size:22px;font-weight:400;margin-bottom:4px;">● Briefly</div>
-      <div style="font-size:12px;color:#7a7670;">Welcome to your morning briefing</div>
-    </div>
-    <div style="font-family:Georgia,serif;font-size:24px;font-weight:400;margin-bottom:16px;line-height:1.3;">
-      You're all set. Your first brief arrives tomorrow morning.
-    </div>
-    <div style="font-size:15px;color:#4a4845;line-height:1.7;margin-bottom:28px;">
-      Every morning, Briefly scans dozens of top sources and builds a personalized briefing based on what you care about.
-      No noise, no algorithm — just the stories that matter to you, with a plain-English explanation of why each one is relevant.
-    </div>
-    <div style="background:#fff;border-radius:16px;padding:24px;border:1px solid #e8e4dc;margin-bottom:28px;">
-      <div style="font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:#2b4fff;margin-bottom:10px;">Your topics</div>
-      <div style="font-size:15px;color:#0f0e0c;line-height:1.7;">{topics_display}</div>
-    </div>
-    <div style="background:#eef1ff;border-left:3px solid #2b4fff;border-radius:0 10px 10px 0;padding:14px 18px;margin-bottom:28px;">
-      <div style="font-size:13px;color:#0f0e0c;line-height:1.7;">
-        <strong>Want to change your topics?</strong> Just reply to this email and let us know.
-      </div>
-    </div>
-    <div style="font-size:14px;color:#7a7670;line-height:1.7;margin-bottom:28px;">
-      Talk soon,<br><strong style="color:#0f0e0c;">The Briefly team</strong>
-    </div>
-    <div style="border-top:1px solid #e8e4dc;padding-top:20px;text-align:center;font-size:11px;color:#7a7670;line-height:1.8;">
-      You're receiving this because you signed up at readbriefly.com<br>
-      <a href="{unsub_link}" style="color:#7a7670;text-decoration:underline;">Unsubscribe</a>
-    </div>
-  </div>
-</body>
-</html>"""
-
-    try:
-        res = requests.post(
-            "https://api.resend.com/emails",
-            headers={"Authorization": f"Bearer {RESEND_KEY}", "Content-Type": "application/json"},
-            json={"from": FROM_EMAIL, "to": [email],
-                  "subject": "Welcome to Briefly — your first brief arrives tomorrow",
-                  "html": html, "tags": [{"name": "type", "value": "welcome"}]},
-            timeout=15,
-        )
-        if res.status_code == 200:
-            print(f"  ✓ Welcome email sent to {email}")
-        else:
-            print(f"  ✗ Welcome email failed: {res.text}")
-    except Exception as e:
-        print(f"  Welcome email error: {e}")
-
-
-# ── STEP 5: BUILD DAILY EMAIL ──
+# ── STEP 4: BUILD DAILY EMAIL ──
 def build_email(user: dict, articles: list, today: str = "", day_summary: str = ""):
     if not today:
         tz_name = user.get("timezone") or "America/New_York"
@@ -461,7 +401,7 @@ def build_email(user: dict, articles: list, today: str = "", day_summary: str = 
 </html>"""
 
 
-# ── STEP 6: SEND EMAIL ──
+# ── STEP 5: SEND EMAIL ──
 def send_email(to_email: str, subject: str, html: str):
     try:
         res = requests.post(
@@ -482,23 +422,6 @@ def send_email(to_email: str, subject: str, html: str):
 # ── MAIN PIPELINE ──
 def run():
     print(f"\n🗞  Briefly pipeline starting — {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}")
-
-    # Send welcome emails to new signups
-    try:
-        new_users = (
-            supabase.table("signups")
-            .select("*")
-            .eq("welcome_sent", False)
-            .neq("unsubscribed", True)
-            .execute()
-            .data
-        )
-        for u in new_users:
-            print(f"\nSending welcome to {u['email']}...")
-            send_welcome_email(u["email"], u.get("topics", ""))
-            supabase.table("signups").update({"welcome_sent": True}).eq("email", u["email"]).execute()
-    except Exception as e:
-        print(f"Welcome step skipped: {e}")
 
     # Send daily briefs
     users = get_users()
