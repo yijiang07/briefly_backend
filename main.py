@@ -2,7 +2,11 @@ import os
 import base64
 import time
 import requests
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+try:
+    from zoneinfo import ZoneInfo
+except ImportError:
+    from backports.zoneinfo import ZoneInfo
 from supabase import create_client
 
 # ── KEYS ──
@@ -54,22 +58,19 @@ def make_unsub_link(email: str) -> str:
 
 
 # ── STEP 1: GET ACTIVE USERS ──
-#def get_users():
- #   result = (
-  #      supabase.table("signups")
-   #     .select("*")
-    #    .neq("unsubscribed", True)
-     #   .execute()
-    #)
-    #return result.data
-
 def get_users():
-    return [{"email": "ruzebranding@gmail.com", "topics": "AI & ML, Startups, Venture capital, Finance & macro, Tech industry", "custom_tracking": ""}]
+    result = (
+        supabase.table("signups")
+        .select("*")
+        .neq("unsubscribed", True)
+        .execute()
+    )
+    return result.data
 
 
 # ── STEP 2: FETCH NEWS ──
 def fetch_articles(topics: str, custom_tracking: str):
-    yesterday   = (datetime.utcnow() - timedelta(days=1)).strftime("%Y-%m-%d")
+    yesterday   = (datetime.now(timezone.utc) - timedelta(days=1)).strftime("%Y-%m-%d")
     topic_list  = [t.strip() for t in topics.split(",")          if t.strip()] if topics else []
     custom_list = [t.strip() for t in custom_tracking.split(",") if t.strip() and t.strip().upper() != "EMPTY"] if custom_tracking else []
 
@@ -100,7 +101,7 @@ def fetch_articles(topics: str, custom_tracking: str):
                 pub = a.get("publishedAt", "")
                 if pub:
                     try:
-                        if (datetime.utcnow() - datetime.strptime(pub[:19], "%Y-%m-%dT%H:%M:%S")).total_seconds() > 172800:
+                        if (datetime.now(timezone.utc) - datetime.strptime(pub[:19], "%Y-%m-%dT%H:%M:%S")).total_seconds() > 172800:
                             continue
                     except Exception:
                         pass
@@ -224,8 +225,7 @@ def send_welcome_email(email: str, topics: str):
 
 
 # ── STEP 5: BUILD DAILY EMAIL ──
-def build_email(user: dict, articles: list):
-    today          = datetime.utcnow().strftime("%A, %B %-d")
+def build_email(user: dict, articles: list, today: str = ""):
     topics_display = user.get("topics", "your topics")
     email          = user.get("email", "")
     unsub_link     = make_unsub_link(email)
@@ -306,7 +306,7 @@ def send_email(to_email: str, subject: str, html: str):
 
 # ── MAIN PIPELINE ──
 def run():
-    print(f"\n🗞  Briefly pipeline starting — {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}")
+    print(f"\n🗞  Briefly pipeline starting — {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}")
 
     # Send welcome emails to new signups
     try:
@@ -332,13 +332,20 @@ def run():
         print("No users. Exiting.")
         return
 
-    today = datetime.utcnow().strftime("%A, %B %-d")
 
     for user in users:
         email  = user.get("email")
         topics = user.get("topics", "")
         custom = user.get("custom_tracking", "")
         print(f"\nProcessing {email}...")
+
+        # Compute today's date in user's timezone
+        tz_name = user.get("timezone") or "America/New_York"
+        try:
+            user_tz = ZoneInfo(tz_name)
+        except Exception:
+            user_tz = ZoneInfo("America/New_York")
+        today = datetime.now(user_tz).strftime("%A, %B %-d")
 
         articles = fetch_articles(topics, custom)
         if not articles:
