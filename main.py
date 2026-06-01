@@ -54,14 +54,17 @@ def make_unsub_link(email: str) -> str:
 
 
 # ── STEP 1: GET ACTIVE USERS ──
+#def get_users():
+ #   result = (
+  #      supabase.table("signups")
+   #     .select("*")
+    #    .neq("unsubscribed", True)
+     #   .execute()
+    #)
+    #return result.data
+
 def get_users():
-    result = (
-        supabase.table("signups")
-        .select("*")
-        .neq("unsubscribed", True)
-        .execute()
-    )
-    return result.data
+    return [{"email": "youremail@gmail.com", "topics": "AI & ML, Startups, Venture capital, Finance & macro, Tech industry", "custom_tracking": ""}]
 
 
 # ── STEP 2: FETCH NEWS ──
