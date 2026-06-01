@@ -435,7 +435,7 @@ def build_email(user: dict, articles: list, today: str = "", day_summary: str = 
     <div style="font-size:14px;color:#7a7670;margin-bottom:16px;line-height:1.6;">
       Here's what matters today across <strong style="color:#0f0e0c;">{topics_display}</strong>.
     </div>
-    {{summary_block}}
+    {summary_block}
     <div style="background:#fff;border-radius:16px;padding:8px 24px;border:1px solid #e8e4dc;">
       {stories_html}
     </div>
