@@ -3,4 +3,4 @@ builder = "NIXPACKS"
 
 [deploy]
 startCommand = "python main.py"
-cronSchedule = "0 11 * * 1-7"
+cronSchedule = "0 7 * * 1-7"
